@@ -5,6 +5,12 @@ RSpec::Core::RakeTask.new(:spec)
 task default: :spec
 
 begin
+  require 'puppet_litmus/rake_tasks'
+  require 'puppetlabs_spec_helper/puppetlabs_spec_helper'
+rescue LoadError
+end
+
+begin
   require 'rubygems'
   require 'github_changelog_generator/task'
 
