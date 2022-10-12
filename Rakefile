@@ -1,11 +1,11 @@
 require 'rspec/core/rake_task'
 
-RSpec::Core::RakeTask.new(:spec)
 
-task default: :spec
+RSpec::Core::RakeTask.new(:spec) do |t|
+  t.exclude_pattern = "spec/acceptance/**/*.rb"
+end
 
 begin
-  require 'rubygems'
   require 'github_changelog_generator/task'
 
   GitHubChangelogGenerator::RakeTask.new :changelog do |config|

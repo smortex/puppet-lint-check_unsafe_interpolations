@@ -1,8 +1,12 @@
-require_relative 'lib/puppet/lint/check_unsafe_interpolations/version'
+# frozen_string_literal: true
+
+lib = File.expand_path('lib', __dir__)
+$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+require 'puppet-lint/plugins/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "puppet-lint-check_unsafe_interpolations"
-  spec.version       = '0.0.1'
+  spec.version       = CheckUnsafeInterpolations::VERSION
   spec.authors       = ['Puppet, Inc.']
   spec.files         = Dir[
     'README.md',
@@ -18,10 +22,5 @@ Gem::Specification.new do |spec|
   spec.license       = 'Apache-2.0'
   spec.required_ruby_version = Gem::Requirement.new(">= 2.7".freeze)
 
-  spec.add_dependency             'puppet-lint', '>= 1.0', '< 3.0'
-  spec.add_development_dependency 'rspec', '~> 3.0'
-  spec.add_development_dependency 'rspec-its', '~> 1.0'
-  spec.add_development_dependency 'rspec-collection_matchers', '~> 1.0'
-  spec.add_development_dependency 'simplecov'
-  spec.add_development_dependency 'rake'
+  spec.add_dependency 'puppet-lint', '~> 2.0'
 end
