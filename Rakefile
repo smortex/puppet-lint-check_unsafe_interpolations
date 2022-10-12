@@ -1,17 +1,11 @@
 require 'rspec/core/rake_task'
 
-RSpec::Core::RakeTask.new(:spec)
 
-task default: :spec
-
-begin
-  require 'puppet_litmus/rake_tasks'
-  require 'puppetlabs_spec_helper/puppetlabs_spec_helper'
-rescue LoadError
+RSpec::Core::RakeTask.new(:spec) do |t|
+  t.exclude_pattern = "spec/acceptance/**/*.rb"
 end
 
 begin
-  require 'rubygems'
   require 'github_changelog_generator/task'
 
   GitHubChangelogGenerator::RakeTask.new :changelog do |config|
