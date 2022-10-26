@@ -1,46 +1,30 @@
 PuppetLint.new_check(:check_unsafe_interpolations) do
-  COMMANDS = Set['command', 'onlyif', 'unless']
+  COMMANDS = Array['command', 'onlyif', 'unless']
   def check
-    exec = false
-
-    # Look for exec blocks
-    tokens.select { |token| check_exec?(token) }.each do |token|
-      exec = true
+    # Gather any exec commands' resources into an array
+    exec_resources = resource_indexes.map do |resource|
+      resource_parameters = resource[:param_tokens].map(&:value)
+      resource if resource[:type].value == 'exec' && !(COMMANDS & resource_parameters).empty?
     end
 
-    # Look for commands in exec blocks
-    tokens.select { |token| exec && check_command?(token) }.each do |token|
-      
-      # Loop over exec command to find command statement
-      while token.type != :NEWLINE
-
-        # Check if command contains an input variable
+    # Iterate over each command found in any exec
+    exec_resources.each do |command_resources|
+      # Iterate over each command in execs and check for unsafe interpolations
+      command_resources[:tokens].each do |token|
+        # Check if any tokens in command are a varibale
         if token.type == :VARIABLE
-
-          # Raise warning since input variable is unsanitised
           warning_message = "unsafe interpolation of variable '#{token.value}' in exec command"
           notify_warning(token, warning_message)
-          break
         end
-
-        token = token.next_token
       end
     end
   end
 
-  def check_exec?(token)
-    return true if token.value == 'exec'
-    return false
-  end
-
-  def check_command?(token)
-    return true if COMMANDS.include?(token.value)
-    return false
-  end
-
+  # Raises a warning given a token and message
   def notify_warning(token, message)
-    notify :warning, message: message,
-                     line: token.line,
-                     column: token.column
+    notify :warning,
+            message: message,
+            line: token.line,
+            column: token.column
   end
 end

@@ -61,10 +61,12 @@ describe 'check_unsafe_interpolations' do
       end
 
       it 'detects one problem' do
+        pending('not implemented yet')
         expect(problems).to have(1).problems
       end
 
       it 'creates one warning' do
+        pending('not implemented yet')
         expect(problems).to contain_warning(msg)
       end
     end
@@ -101,6 +103,7 @@ describe 'check_unsafe_interpolations' do
       end
 
       it 'detects zero problems' do
+        pending('not implemented yet')
         expect(problems).to have(0).problems
       end
     end
