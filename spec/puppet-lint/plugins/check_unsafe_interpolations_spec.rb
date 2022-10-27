@@ -1,9 +1,10 @@
 require 'spec_helper'
 
 describe 'check_unsafe_interpolations' do
-  let(:msg){ "unsafe interpolation of variable 'foo' in exec command" }
+  let(:msg) { "unsafe interpolation of variable 'foo' in exec command" }
+
   context 'with fix disabled' do
-    context 'code with unsafe interpolation' do
+    context 'exec with unsafe interpolation in command' do
       let(:code) do
         <<-PUPPET
         class foo {
@@ -20,12 +21,55 @@ describe 'check_unsafe_interpolations' do
         expect(problems).to have(1).problems
       end
 
-      it 'should create a warning' do
+      it 'creates one warning' do
         expect(problems).to contain_warning(msg)
       end
     end
 
-    context 'code with no problems' do
+    context 'exec with multiple unsafe interpolations in command' do
+      let(:code) do
+        <<-PUPPET
+        class foo {
+
+          exec { 'bar':
+            command => "echo ${foo} ${bar}",
+          }
+
+        }
+        PUPPET
+      end
+
+      it 'detects multiple unsafe exec command arguments' do
+        expect(problems).to have(2).problems
+      end
+
+      it 'creates two warnings' do
+        expect(problems).to contain_warning(msg)
+        expect(problems).to contain_warning(msg)
+      end
+    end
+
+    context 'code that uses title with unsafe string as command' do
+      let(:code) do
+        <<-PUPPET
+        class foo {
+
+          exec { "echo ${foo}": }
+
+        }
+        PUPPET
+      end
+
+      it 'detects one problem' do
+        expect(problems).to have(1).problems
+      end
+
+      it 'creates one warning' do
+        expect(problems).to contain_warning(msg)
+      end
+    end
+
+    context 'exec with a safe string in command' do
       let(:code) do
         <<-PUPPET
         class foo {
@@ -38,7 +82,25 @@ describe 'check_unsafe_interpolations' do
         PUPPET
       end
 
-      it 'should not detect any problems' do
+      it 'detects zero problems' do
+        expect(problems).to have(0).problems
+      end
+    end
+
+    context 'exec that has an array of args in command' do
+      let(:code) do
+        <<-PUPPET
+        class foo {
+
+          exec { 'bar':
+            command => ['echo', $foo],
+          }
+
+        }
+        PUPPET
+      end
+
+      it 'detects zero problems' do
         expect(problems).to have(0).problems
       end
     end
