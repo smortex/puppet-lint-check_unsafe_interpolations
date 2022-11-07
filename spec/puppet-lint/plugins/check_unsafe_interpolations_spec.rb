@@ -97,13 +97,11 @@ describe 'check_unsafe_interpolations' do
           exec { 'bar':
             command => ['echo', $foo],
           }
-
         }
         PUPPET
       end
 
       it 'detects zero problems' do
-        pending('not implemented yet')
         expect(problems).to have(0).problems
       end
     end
