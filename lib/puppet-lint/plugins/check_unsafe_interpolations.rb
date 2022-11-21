@@ -2,9 +2,19 @@ PuppetLint.new_check(:check_unsafe_interpolations) do
   COMMANDS = Array['command', 'onlyif', 'unless']
   def check
     # Gather any exec commands' resources into an array
-    exec_resources = resource_indexes.map do |resource|
+    exec_resources = resource_indexes.map { |resource|
       resource_parameters = resource[:param_tokens].map(&:value)
       resource if resource[:type].value == 'exec' && !(COMMANDS & resource_parameters).empty?
+    }.compact
+
+    # Get title tokens with modified puppet lint function
+    title_tokens_list = get_title_tokens
+
+    # Iterate over title tokens and raise a warning if any are variables
+    title_tokens_list[:tokens].each do |token|
+      if token.type == :VARIABLE
+        notify_warning(token)
+      end
     end
 
     # Iterate over each command found in any exec
@@ -57,5 +67,50 @@ PuppetLint.new_check(:check_unsafe_interpolations) do
       return true if current_token.type == :FARROW && current_token.next_token.next_token.type == :LBRACK
       current_token = current_token.next_token
     end
+  end
+
+  # This function is a replacement for puppet_lint's title_tokens function which assumes titles have single quotes
+  # This function adds a check for titles in double quotes where there could be interpolated variables
+  def get_title_tokens
+    tokens_array = []
+    result = {}
+    tokens.each_index do |token_idx|
+      if tokens[token_idx].type == :COLON
+        # Check if title is an array
+        if tokens[token_idx - 1].type == :RBRACK
+          array_start_idx = tokens.rindex do |r|
+            r.type == :LBRACK
+          end
+          title_array_tokens = tokens[(array_start_idx + 1)..(token_idx - 2)]
+          tokens_array.concat(title_array_tokens.select do |token|
+            { STRING: true, NAME: true }.include?(token.type)
+          end)
+          result = {
+            tokens: tokens_array,
+            resource_type: tokens[array_start_idx].prev_code_token.prev_code_token
+          }
+        # Check if title is double quotes string
+        elsif tokens[token_idx - 1].type == :DQPOST
+          # Find index of the start of the title
+          title_start_idx = tokens.rindex do |r|
+            r.type == :DQPRE
+          end
+          result = {
+            # Title is tokens from :DQPRE to the index before :COLON
+            tokens: tokens[title_start_idx..(token_idx - 1)],
+            resource_type: tokens[title_start_idx].prev_code_token.prev_code_token
+          }
+        # Title is in single quotes
+        else
+          next_token = tokens[token_idx].next_code_token
+          tokens_array.concat(tokens[..token_idx - 1]) unless next_token.type == :LBRACE
+          result = {
+            tokens: tokens_array,
+            resource_type: tokens[token_idx - 1].prev_code_token.prev_code_token
+          }
+        end
+      end
+    end
+    result
   end
 end

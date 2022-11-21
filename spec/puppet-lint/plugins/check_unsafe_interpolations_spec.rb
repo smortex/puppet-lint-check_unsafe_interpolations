@@ -61,12 +61,10 @@ describe 'check_unsafe_interpolations' do
       end
 
       it 'detects one problem' do
-        pending('not implemented yet')
         expect(problems).to have(1).problems
       end
 
       it 'creates one warning' do
-        pending('not implemented yet')
         expect(problems).to contain_warning(msg)
       end
     end
@@ -96,6 +94,23 @@ describe 'check_unsafe_interpolations' do
 
           exec { 'bar':
             command => ['echo', $foo],
+          }
+        }
+        PUPPET
+      end
+
+      it 'detects zero problems' do
+        expect(problems).to have(0).problems
+      end
+    end
+
+    context 'exec that has an array of args in command' do
+      let(:code) do
+        <<-PUPPET
+        class foo {
+
+          exec { ["foo", "bar", "baz"]:
+            command => echo qux,
           }
         }
         PUPPET
