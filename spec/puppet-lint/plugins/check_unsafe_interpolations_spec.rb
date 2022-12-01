@@ -120,5 +120,45 @@ describe 'check_unsafe_interpolations' do
         expect(problems).to have(0).problems
       end
     end
+
+    context 'file resource' do
+      let(:code) do
+        <<-PUPPET
+        class foo {
+          file { '/etc/bar':
+            ensure  => file,
+            backup  => false,
+            content => $baz,
+          }
+        }
+        PUPPET
+      end
+
+      it 'detects zero problems' do
+        expect(problems).to have(0).problems
+      end
+    end
+
+    context 'file resource and an exec with unsafe interpolation in command' do
+      let(:code) do
+        <<-PUPPET
+        class foo {
+          file { '/etc/bar':
+            ensure  => file,
+            backup  => false,
+            content => $baz,
+          }
+
+          exec { 'qux':
+            command => "echo ${foo}",
+          }
+        }
+        PUPPET
+      end
+
+      it 'detects one problem' do
+        expect(problems).to have(1).problems
+      end
+    end
   end
 end
