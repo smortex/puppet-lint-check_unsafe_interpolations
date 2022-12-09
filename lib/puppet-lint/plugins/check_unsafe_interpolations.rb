@@ -1,6 +1,7 @@
 PuppetLint.new_check(:check_unsafe_interpolations) do
   COMMANDS = Array['command', 'onlyif', 'unless']
   INTERPOLATED_STRINGS = Array[:DQPRE, :DQMID]
+  USELESS_CHARS = Array[:WHITESPACE, :COMMA]
   def check
     # Gather any exec commands' resources into an array
     exec_resources = resource_indexes.map { |resource|
@@ -8,14 +9,9 @@ PuppetLint.new_check(:check_unsafe_interpolations) do
       resource if resource[:type].value == 'exec' && !(COMMANDS & resource_parameters).empty?
     }.compact
 
-    # Filter the list of titles returned by get_title_tokens for those contained in an exec
-    exec_title_tokens = get_title_tokens.select { |title|
-      title if title[:resource_type].value == 'exec'
-    }.compact
-
     # Iterate over title tokens and raise a warning if any are variables
-    unless exec_title_tokens.empty?
-      exec_title_tokens.each do |title|
+    unless get_exec_titles.empty?
+      get_exec_titles.each do |title|
         check_unsafe_title(title)
       end
     end
@@ -28,7 +24,7 @@ PuppetLint.new_check(:check_unsafe_interpolations) do
 
   # Iterate over the tokens in a title and raise a warning if an interpolated variable is found
   def check_unsafe_title(title)
-    title[:tokens].each do |token|
+    title.each do |token|
       notify_warning(token.next_code_token) if interpolated?(token)
     end
   end
@@ -83,43 +79,36 @@ PuppetLint.new_check(:check_unsafe_interpolations) do
 
   # This function is a replacement for puppet_lint's title_tokens function which assumes titles have single quotes
   # This function adds a check for titles in double quotes where there could be interpolated variables
-  def get_title_tokens
+  def get_exec_titles
     result = []
     tokens.each_index do |token_idx|
-      next unless tokens[token_idx].type == :COLON
+      next unless ['exec'].include?(tokens[token_idx].value)
+      # We have a resource declaration. Now find the title
       tokens_array = []
       # Check if title is an array
-      if tokens[token_idx - 1].type == :RBRACK
-        array_start_idx = tokens.rindex do |r|
-          r.type == :LBRACK
-        end
-        title_array_tokens = tokens[(array_start_idx + 1)..(token_idx - 2)]
-        tokens_array.concat(title_array_tokens.select do |token|
-          { STRING: true, NAME: true }.include?(token.type)
+      if tokens[token_idx].next_code_token.next_code_token.type == :LBRACK
+        # Get the start and end indices of the array of titles
+        array_start_idx = tokens.rindex { |r| r.type == :LBRACK }
+        array_end_idx = tokens.rindex { |r| r.type == :RBRACK }
+
+        # Grab everything within the array
+        title_array_tokens = tokens[(array_start_idx + 1)..(array_end_idx - 1)]
+        tokens_array.concat(title_array_tokens.reject do |token|
+          USELESS_CHARS.include?(token.type)
         end)
-        result << {
-          tokens: tokens_array,
-          resource_type: tokens[array_start_idx].prev_code_token.prev_code_token
-        }
+        result << tokens_array
       # Check if title is double quotes string
-      elsif tokens[token_idx - 1].type == :DQPOST
-        # Find index of the start of the title
-        title_start_idx = tokens.rindex do |r|
-          r.type == :DQPRE
-        end
-        result << {
-          # Title is tokens from :DQPRE to the index before :COLON
-          tokens: tokens[title_start_idx..(token_idx - 1)],
-          resource_type: tokens[title_start_idx].prev_code_token.prev_code_token
-        }
+      elsif tokens[token_idx].next_code_token.next_code_token.type == :DQPRE
+        # Find the start and end of the title
+        title_start_idx = tokens.rindex { |r| r.type == :DQPRE }
+        title_end_idx = tokens.rindex { |r| r.type == :DQPOST }
+
+        result << tokens[title_start_idx..title_end_idx]
       # Title is in single quotes
       else
-        next_token = tokens[token_idx].next_code_token
-        tokens_array.concat([tokens[token_idx - 1]]) unless next_token.type == :LBRACE
-        result << {
-          tokens: tokens_array,
-          resource_type: tokens[token_idx - 1].prev_code_token.prev_code_token
-        }
+        tokens_array.concat([tokens[token_idx].next_code_token.next_code_token])
+
+        result << tokens_array
       end
     end
     result
