@@ -160,5 +160,27 @@ describe 'check_unsafe_interpolations' do
         expect(problems).to have(1).problems
       end
     end
+
+    context 'case statement and an exec' do
+      let(:code) do
+        <<-PUPPET
+        class foo {
+          case bar {
+            baz : {
+              echo qux
+            }
+          }
+
+          exec { 'foo':
+            command => "echo bar",
+          }
+        }
+        PUPPET
+      end
+
+      it 'detects zero problems' do
+        expect(problems).to have(0).problems
+      end
+    end
   end
 end
