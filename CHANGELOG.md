@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org).
 
+## [v0.0.3](https://github.com/puppetlabs/puppet-lint-check_unsafe_interpolations/tree/v0.0.3) - 2022-12-09
+
+[Full Changelog](https://github.com/puppetlabs/puppet-lint-check_unsafe_interpolations/compare/v0.0.2...v0.0.3)
+
+### Fixed
+
+- (CONT-341) Bump version to 0.0.3 [#30](https://github.com/puppetlabs/puppet-lint-check_unsafe_interpolations/pull/30) ([GSPatton](https://github.com/GSPatton))
+- (CONT-333) Ensure get_title_tokens func only gets resource titles [#28](https://github.com/puppetlabs/puppet-lint-check_unsafe_interpolations/pull/28) ([GSPatton](https://github.com/GSPatton))
+
 ## [v0.0.2](https://github.com/puppetlabs/puppet-lint-check_unsafe_interpolations/tree/v0.0.2) - 2022-12-06
 
 [Full Changelog](https://github.com/puppetlabs/puppet-lint-check_unsafe_interpolations/compare/v0.0.1...v0.0.2)
