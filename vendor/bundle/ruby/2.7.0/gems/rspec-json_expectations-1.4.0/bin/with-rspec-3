@@ -1,3 +1,0 @@
-#!/bin/bash
-
-BUNDLE_GEMFILE=gemfiles/rspec-3 bundle $*
