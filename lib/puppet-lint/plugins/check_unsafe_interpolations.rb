@@ -100,8 +100,8 @@ PuppetLint.new_check(:check_unsafe_interpolations) do
       # Check if title is double quotes string
       elsif tokens[token_idx].next_code_token.next_code_token.type == :DQPRE
         # Find the start and end of the title
-        title_start_idx = tokens.rindex { |r| r.type == :DQPRE }
-        title_end_idx = tokens.rindex { |r| r.type == :DQPOST }
+        title_start_idx = tokens.find_index(tokens[token_idx].next_code_token.next_code_token)
+        title_end_idx = title_start_idx + index_offset_for(':', tokens[title_start_idx..tokens.length])
 
         result << tokens[title_start_idx..title_end_idx]
       # Title is in single quotes
@@ -116,5 +116,14 @@ PuppetLint.new_check(:check_unsafe_interpolations) do
 
   def interpolated?(token)
     INTERPOLATED_STRINGS.include?(token.type)
+  end
+
+  # Finds the index offset of the next instance of `value` in `tokens_slice` from the original index
+  def index_offset_for(value, tokens_slice)
+    i = 0
+    while i < tokens_slice.length
+      return i if value.include?(tokens_slice[i].value)
+      i += 1
+    end
   end
 end
